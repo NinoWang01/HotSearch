@@ -2,14 +2,23 @@ package com.example.hotsearch;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.wang.avi.AVLoadingIndicatorView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -37,7 +46,11 @@ public class MainActivity extends Activity {
     private String url = "https://www.toolnb.com/ext/topnowdata.json";
     private String token = "0a7365f58a8585a805862d23875f0bc2";
     private MyAdapter myAdapter;
-    private List<Map<String,Object>> list;
+    private List<Map<String, Object>> list;
+    private AVLoadingIndicatorView avi;
+    private FloatingActionButton fb;
+    private SharedPreferences sharedPreferences;
+    private String search;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +58,23 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         initView();
-        new Thread(){
+        avi.show();
+        sharedPreferences = getSharedPreferences("search", Context.MODE_PRIVATE);
+        search=sharedPreferences.getString("name","google");
+        fb.setImageDrawable(ContextCompat.getDrawable(MainActivity.this, search.equals("google")?R.mipmap.google:R.mipmap.baidu));
+
+        fb.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                search = search.equals("google")?"baidu":"google";
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString("search", search);
+                editor.commit();
+                fb.setImageDrawable(ContextCompat.getDrawable(MainActivity.this, search.equals("google")?R.mipmap.google:R.mipmap.baidu));
+            }
+        });
+
+        new Thread() {
             @Override
             public void run() {
                 super.run();
@@ -53,11 +82,22 @@ public class MainActivity extends Activity {
             }
         }.start();
 
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Intent intent = new Intent(MainActivity.this,WebViewActivity.class);
+                intent.putExtra("param",list.get(i).get("word").toString());
+                intent.putExtra("search",search);
+                startActivity(intent);
+            }
+        });
     }
 
 
     private void initView() {
         lv = findViewById(R.id.lv);
+        avi = findViewById(R.id.avi);
+        fb = findViewById(R.id.fb);
     }
 
 
@@ -99,11 +139,11 @@ public class MainActivity extends Activity {
                 message.close();
                 // 返回字符串
                 jsonStringToList(new String(message.toByteArray()));
-                Log.d("--------json",new String(message.toByteArray()));
+                Log.d("--------json", new String(message.toByteArray()));
             }
         } catch (Exception e) {
             e.printStackTrace();
-            Log.d("--------htttp",e.toString());
+            Log.d("--------htttp", e.toString());
 
         }
     }
@@ -126,7 +166,7 @@ public class MainActivity extends Activity {
                 map.put("sort", jsonObject_item.getString("sort"));
                 // 把map添加到list中去
                 list.add(map);
-                Log.d("--------json",jsonObject_item.getString("word"));
+                Log.d("--------json", jsonObject_item.getString("word"));
 
             }
             Message message = new Message();
@@ -134,7 +174,7 @@ public class MainActivity extends Activity {
             this.list = list;
             handler.sendMessage(message);
         } catch (Exception e) {
-            Log.d("--------e",e.toString());
+            Log.d("--------e", e.toString());
             e.printStackTrace();
         }
 
@@ -144,14 +184,15 @@ public class MainActivity extends Activity {
         @Override
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
+            avi.hide();
             switch (msg.what) {
                 case 0:
-                   if (myAdapter!=null){
-                       myAdapter.notifyDataSetChanged();
-                   }else {
-                       myAdapter = new MyAdapter(MainActivity.this,list);
-                       lv.setAdapter(myAdapter);
-                   }
+                    if (myAdapter != null) {
+                        myAdapter.notifyDataSetChanged();
+                    } else {
+                        myAdapter = new MyAdapter(MainActivity.this, list);
+                        lv.setAdapter(myAdapter);
+                    }
                     break;
                 case 1:
                     Toast.makeText(MainActivity.this, "网络请求失败", Toast.LENGTH_SHORT).show();

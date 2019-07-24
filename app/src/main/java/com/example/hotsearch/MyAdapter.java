@@ -56,14 +56,14 @@ public class MyAdapter extends BaseAdapter {
             viewHolder.iv.setVisibility(View.GONE);
         else
             viewHolder.iv.setVisibility(View.VISIBLE);
-        viewHolder.ll.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(context,WebViewActivity.class);
-                intent.putExtra("param",list.get(i).get("word").toString());
-            context.startActivity(intent);
-            }
-        });
+//        viewHolder.ll.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Intent intent = new Intent(context,WebViewActivity.class);
+//                intent.putExtra("param",list.get(i).get("word").toString());
+//            context.startActivity(intent);
+//            }
+//        });
         return view;
     }
 
